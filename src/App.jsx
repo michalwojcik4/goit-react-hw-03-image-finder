@@ -1,77 +1,78 @@
 import { Component } from 'react';
+import axios from 'axios';
 
 import { Searchbar } from './components/Searchbar/Searchbar';
 import { ImageGallery } from './components/ImageGallery/ImageGallery';
+import { ImageGalleryItem } from 'components/ImageGalleryItem/ImageGalleryItem';
 import { Button } from './components/Button/Button';
 import { Loader } from 'components/Loader/Loader';
+import { Modal } from 'components/Modal/Modal';
 
-import { fetchArticlesWithQuery } from './untils/api';
-
-const INITIAL_STATE = {
-  searchbar: 'forest',
-  images: [],
-  isLoading: false,
-  error: '',
-  currentPage: 2,
-};
+import css from 'App.module.css';
 
 export class App extends Component {
   state = {
-    ...INITIAL_STATE,
+    images: [],
+    query: '',
+    page: 1,
+    loading: false,
+    modalImage: null,
   };
 
-  changeState = inputValue => {
-    this.setState({
-      searchbar: inputValue,
-    });
+  handleSearch = query => {
+    this.setState({ query, images: [], page: 1 }, this.fetchImages);
   };
 
-  async componentDidMount() {
-    await this.getInitialData();
-  }
+  fetchImages = () => {
+    const { query, page } = this.state;
+    const apiKey = '39269342-bb9295fafabc2f42da640db69';
 
-  async componentDidUpdate() {
-    await this.getInitialData();
-  }
+    this.setState({ loading: true });
 
-  getInitialData = async () => {
-    const { searchbar, currentPage } = this.state;
-    try {
-      const newImages = await fetchArticlesWithQuery(searchbar, currentPage);
-      this.setState({images: [...newImages]});
-    } catch (error) {
-      this.setState({ error });
-    } finally {
-      this.setState({ isLoading: false });
-    }
+    axios
+      .get(
+        `https://pixabay.com/api/?q=${query}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=12`
+      )
+      .then(response => {
+        this.setState(prevState => ({
+          images: [...prevState.images, ...response.data.hits],
+          page: prevState.page + 1,
+        }));
+      })
+      .catch(error => console.error('Error fetching images:', error))
+      .finally(() => this.setState({ loading: false }));
   };
 
-  shouldComponentUpdate(nextProps, nextState) {
-    const oldState = this.state;
+  handleImageClick = image => {
+    this.setState({ modalImage: image });
+    document.body.classList.add('modal-open');
+  };
 
-    if (nextState.images[0]?.id !== oldState.images[0]?.id) return true;
-    if (nextState.searchbar !== oldState.searchbar) return true;
-    if (nextState.currentPage !== oldState.currentPage) return true;
-    return true;
-  }
-
-  handleCurrentPageUpdate = () => {
-    this.setState(state => {
-      return {
-        currentPage: state.currentPage + 1,
-      };
-    });
+  closeModal = () => {
+    this.setState({ modalImage: null });
+    document.body.classList.remove('modal-open');
   };
 
   render() {
-    const { images, isLoading, error } = this.state;
+    const { images, loading, modalImage } = this.state;
+
     return (
       <>
-        <Searchbar onSubmit={this.changeState} />
-        {error && <p>Something went wrong: {error.message}</p>}
-        {isLoading && <Loader />}
-        {images.length > 0 && <ImageGallery images={images} />}
-        <Button handleClick={this.handleCurrentPageUpdate} />
+        <Searchbar onSubmit={this.handleSearch} />
+        {loading && <Loader />}
+        <div className = {css.container}>
+          <ImageGallery>
+            {images.map(image => (
+              <ImageGalleryItem
+                key={image.id}
+                image={image}
+                onClick={() => this.handleImageClick(image)}
+              />
+            ))}
+          </ImageGallery>
+          {images.length >= 12 && <Button onClick={this.fetchImages} />}
+        </div>
+        {modalImage && <Modal image={modalImage} onClose={this.closeModal} />}
       </>
     );
   }
