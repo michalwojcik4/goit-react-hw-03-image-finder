@@ -31,7 +31,7 @@ This application allows users to search for images based on a keyword and browse
 ## Configuration
 
 1. Clone the repository:
-git clone https://github.com/your-username/repository.git
+git clone git@github.com:michalwojcik4/goit-react-hw-03-image-finder.git
 
 Navigate to the project directory:
 cd repository
