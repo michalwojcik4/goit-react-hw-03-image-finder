@@ -25,13 +25,13 @@ export class App extends Component {
 
   fetchImages = () => {
     const { query, page } = this.state;
-    const apiKey = '39269342-bb9295fafabc2f42da640db69';
+    const API_KEY = process.env.REACT_APP_API_KEY;
 
     this.setState({ loading: true });
 
     axios
       .get(
-        `https://pixabay.com/api/?q=${query}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=12`
+        `https://pixabay.com/api/?q=${query}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
       )
       .then(response => {
         this.setState(prevState => ({
